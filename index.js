@@ -1,5 +1,5 @@
 var bigAssApi = require("BigAssFansAPI");
-bigAssApi.logging = false;
+bigAssApi.logging = true;
 
 var Service, Characteristic;
 
@@ -14,6 +14,10 @@ module.exports = function(homebridge) {
   homebridge.registerAccessory("homebridge-bigAssFan", "BigAssFan", BigAssFanAccessory);
 }
 
+  /********************************************
+   * Platform setup
+   ********************************************/
+   
 function BigAssFansPlatform(log, config, api) {
   // If config is not specified do not attempt to load platform
   // or else it will eat the port.
@@ -46,6 +50,10 @@ function BigAssFansPlatform(log, config, api) {
   }
 }
 
+  /********************************************
+   * Adding/Removing Accessories
+   ********************************************/
+   
 // Function invoked when homebridge tries to restore cached accessory
 // Developer can configure accessory at here (like setup event handler)
 // Update current value
@@ -155,6 +163,10 @@ function BigAssFanAccessory(log, config, existingAccessory) {
 
   // this.myBigAss.updateAll();
 
+  /********************************************
+   * Get/Set/Update function setup
+   ********************************************/
+
   var setCharacteristicOnService = function(service, 
                                             characteristic, 
                                             propertyToWrap, 
@@ -162,8 +174,8 @@ function BigAssFanAccessory(log, config, existingAccessory) {
                                             getOutputMapping, 
                                             setOutputMapping) {
 
-    var thisChar = service.getCharacteristic(characteristic)
-
+    var thisChar = service.getCharacteristic(characteristic);
+    
     if (getOutputMapping) {
       thisChar.on('get', this.getStateFactory(propertyToWrap, 
                                               subProperty, 
@@ -177,6 +189,7 @@ function BigAssFanAccessory(log, config, existingAccessory) {
           // newValue : The value we just recieved
           // context  : Gives context so that whoever requested the update doesn't recieve it.
           //            In this case we need everyone to get the update
+
           thisChar.emit('change', { 
               oldValue:thisChar.value, 
               newValue:getOutputMapping(newValue), 
@@ -241,19 +254,25 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   }
 
   var fanRotationGetWrapper = function(value) {
+
     return (value ? Characteristic.RotationDirection.COUNTER_CLOCKWISE : Characteristic.RotationDirection.CLOCKWISE);
   }
 
   var occupancyGetWrapper = function(value) {
-    return (value ? Characteristic.OccupancyDetected.OCCUPANCY_DETECTED : Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED);
-  }
+    // We define that returning null will ignore the command
+    // For some reason homekit likes to send extraneous "On" commands
+    if (this.myBigAss.sensor.isOccupied > 0) {
+      return Characteristic.OccupancyDetected.OCCUPANCY_DETECTED;
+    }
+    return Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
+  }.bind(this)
 
   var lightMaxBrightness = this.myBigAss.light.max ? this.myBigAss.light.max : 16;
   var fanMaxSpeed        = this.myBigAss.fan.max ? this.myBigAss.fan.max : 7;
   
   if (this.lightExists) {
     this.log("Found a light for: " + this.homekitLightName);
-  
+
     var existingLightBulbService;
     if (existingAccessory){
       existingLightBulbService = existingAccessory.getService(this.homekitLightName);
@@ -275,7 +294,11 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   } else {
     this.log("No light exists for: " + this.homekitLightName);
   }
-    
+
+  /********************************************
+   * Existing accessory updates
+   ********************************************/
+   
   var existingFanService;
   if (existingAccessory){
     existingFanService = existingAccessory.getService(this.homekitFanName);
@@ -300,11 +323,11 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   var existingOccupancyService;
   if (existingAccessory){
     existingOccupancyService = existingAccessory.getService(this.homekitOccupancyName);
-  }
+  }    
 
   this.occupancyService = existingOccupancyService || new Service.OccupancySensor(this.homekitOccupancyName);
   
-  setCharacteristicOnService(this.occupancyService, Characteristic.OccupancyDetected,
+    setCharacteristicOnService(this.occupancyService, Characteristic.OccupancyDetected,
                               "sensor", "isOccupied",
                               occupancyGetWrapper, null)
     
@@ -315,6 +338,7 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   this.getServices = function() {
     return [this.lightService, this.fanService, this.occupancyService];
   }
+
   if (existingAccessory){
     existingAccessory.updateReachability(true);
   }
