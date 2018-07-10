@@ -65,6 +65,7 @@ You must also set the fan_name to the name returned here.
 Future features
 ---------------
  - Getting motion sensors to work
+ -- A note about sensors: The motion setting must be enabled for at least one service in the haiku app, either the fan or the light if it exists, and the occupancy sensor timeout must be set in order for this plugin's occupancy sensors to work. Even so, right now they will only update when you manually check them. This plugin lacks any way for the fan to notify it of changes.
  - Allowing all Legacy settings in the Platform mode
 
 Testing
