@@ -1,5 +1,5 @@
 var bigAssApi = require("BigAssFansAPI");
-bigAssApi.logging = true;
+bigAssApi.logging = false;
 
 var Service, Characteristic;
 
@@ -329,7 +329,7 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   
     setCharacteristicOnService(this.occupancyService, Characteristic.OccupancyDetected,
                               "sensor", "isOccupied",
-                              occupancyGetWrapper, null)
+                              occupancyGetWrapper, passThroughWrapper)
     
   if (existingAccessory && !existingOccupancyService){
     existingAccessory.addService(this.occupancyService);
