@@ -137,7 +137,7 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   this.homekitFanName   = config["homekit_fan_name"]
   this.homekitLightName = config["homekit_light_name"]
   this.fanMaster        = config["fan_master"]       // Can NOT be entered by user
-
+  this.updateInterval   = 1000;                      // 1 second
   // Set defaults
   var setDefault = function(property, value) {
     if (!this[property]) {this[property] = value}
@@ -161,6 +161,7 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   // Put in exact information for the fan you're trying to reach
   this.myBigAss = new bigAssApi.BigAssFan(this.fanName, this.fanID, this.fanIPAddress, this.fanMaster);
 
+  setInterval(this.myBigAss.updateAll, this.updateInterval);
   // this.myBigAss.updateAll();
 
   /********************************************
