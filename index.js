@@ -76,16 +76,17 @@ BigAssFansPlatform.prototype.addAccessory = function(theFan) {
   var uuid;
   
   var doctoredConfig = {
-    "name"               : theFan.name,
-    "fan_name"           : theFan.name,
-    "fan_id"             : theFan.id,
-    "fan_ip_address"     : theFan.address,
-    "light_exists"       : theFan.light.exists,
-    "light_on"           : platform.config.light_on,
-    "fan_on"             : platform.config.fan_on,
-    "homekit_fan_name"   : platform.config.homekit_fan_name,
-    "homekit_light_name" : platform.config.homekit_light_name,
-    "fan_master"         : theFan.master,
+    "name"                : theFan.name,
+    "fan_name"            : theFan.name,
+    "fan_id"              : theFan.id,
+    "fan_ip_address"      : theFan.address,
+    "light_exists"        : theFan.light.exists,
+    "light_on"            : platform.config.light_on,
+    "fan_on"              : platform.config.fan_on,
+    "homekit_fan_name"    : platform.config.homekit_fan_name,
+    "homekit_light_name"  : platform.config.homekit_light_name,
+    "homekit_whoosh_name" : platform.config.homekit_whoosh_name,
+    "fan_master"          : theFan.master,
   }
 
   //Check if we have a cached accessory and link it to runtime fan instance, or create new service
@@ -126,17 +127,18 @@ BigAssFansPlatform.prototype.removeAccessory = function() {
 
 
 function BigAssFanAccessory(log, config, existingAccessory) {
-  this.log              = log;
-  this.name             = config["name"];
-  this.fanName          = config["fan_name"];        // TODO: Allow this to be null
-  this.fanID            = config["fan_id"];
-  this.fanIPAddress     = config["fan_ip_address"];  // Can be null - resorts to broadcasting
-  this.lightExists      = config["light_exists"]     // Can be null - default is below
-  this.lightOn          = config["light_on"];        // Can be null - default is below
-  this.fanOn            = config["fan_on"];          // Can be null - default is below
-  this.homekitFanName   = config["homekit_fan_name"]
-  this.homekitLightName = config["homekit_light_name"]
-  this.fanMaster        = config["fan_master"]       // Can NOT be entered by user
+  this.log               = log;
+  this.name              = config["name"];
+  this.fanName           = config["fan_name"];        // TODO: Allow this to be null
+  this.fanID             = config["fan_id"];
+  this.fanIPAddress      = config["fan_ip_address"];  // Can be null - resorts to broadcasting
+  this.lightExists       = config["light_exists"]     // Can be null - default is below
+  this.lightOn           = config["light_on"];        // Can be null - default is below
+  this.fanOn             = config["fan_on"];          // Can be null - default is below
+  this.homekitFanName    = config["homekit_fan_name"]
+  this.homekitLightName  = config["homekit_light_name"]
+  this.homekitWhooshName = config["homekit_whoosh_name"]
+  this.fanMaster         = config["fan_master"]       // Can NOT be entered by user
 
   this.sensorUpdateInterval    = 500;               // 0.5 second
   this.fullStateUpdateInterval = 5*1000;            // 5 seconds
@@ -155,6 +157,7 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   setDefault("homekitFanName", this.name + " Fan");
   setDefault("homekitLightName", this.name + " Fan Light");
   setDefault("homekitOccupancyName", this.name + " Occupancy Sensor");
+  setDefault("homekitWhooshName", this.name + " Whoosh Mode");
   // Don't scan for any fans since we know the exact address of the fan (faster!)
   // TODO: Make fan_id optional and do the scan for the user
   if (!this.fanMaster) {
@@ -268,6 +271,14 @@ function BigAssFanAccessory(log, config, existingAccessory) {
     return (value === "OCCUPIED" ? Characteristic.OccupancyDetected.OCCUPANCY_DETECTED : Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED);
   }
 
+  var fanWhooshSetWrapper = function(value) {
+    return value ? "ON" : "OFF";
+  }
+
+  var fanWhooshGetWrapper = function(value) {
+    return value == "ON";
+  }
+
   var lightMaxBrightness = this.myBigAss.light.max ? this.myBigAss.light.max : 16;
   var fanMaxSpeed        = this.myBigAss.fan.max ? this.myBigAss.fan.max : 7;
   
@@ -335,9 +346,23 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   if (existingAccessory && !existingOccupancyService){
     existingAccessory.addService(this.occupancyService);
   }
+  var existingWhooshService;
+  if (existingAccessory){
+    existingWhooshService = existingAccessory.getService(this.homekitWhooshName);
+  }
+
+  this.whooshService = existingWhooshService || new Service.Switch(this.homekitWhooshName);
+  
+  setCharacteristicOnService(this.whooshService, Characteristic.On,
+                              "fan", "whoosh",
+                              fanWhooshGetWrapper, fanWhooshSetWrapper);
+    
+  if (existingAccessory && !existingWhooshService){
+    existingAccessory.addService(this.whooshService);
+  }
 
   this.getServices = function() {
-    return [this.lightService, this.fanService, this.occupancyService];
+    return [this.lightService, this.fanService, this.occupancyService, this.whooshService];
   }
 
   if (existingAccessory){
