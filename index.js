@@ -192,18 +192,7 @@ function BigAssFanAccessory(log, config, existingAccessory) {
 
       // Register for updates outside of the homekit system
       this.myBigAss[propertyToWrap].registerUpdateCallback(subProperty, function(newValue) {
-        if (thisChar.emit) {
-          // Emit this change to the homekit system
-          // oldValue : Grabs the old cached value for this characterisitic
-          // newValue : The value we just recieved
-          // context  : Gives context so that whoever requested the update doesn't recieve it.
-          //            In this case we need everyone to get the update
-
-          thisChar.emit('change', { 
-              oldValue:thisChar.value, 
-              newValue:getOutputMapping(newValue), 
-              context:null });
-        }
+        thisChar.updateValue(getOutputMapping(newValue));
       });
     }
 
