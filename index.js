@@ -259,13 +259,8 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   }
 
   var occupancyGetWrapper = function(value) {
-    // We define that returning null will ignore the command
-    // For some reason homekit likes to send extraneous "On" commands
-    if (this.myBigAss.sensor.isOccupied > 0) {
-      return Characteristic.OccupancyDetected.OCCUPANCY_DETECTED;
-    }
-    return Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
-  }.bind(this)
+    return (value === "OCCUPIED" ? Characteristic.OccupancyDetected.OCCUPANCY_DETECTED : Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED);
+  }
 
   var lightMaxBrightness = this.myBigAss.light.max ? this.myBigAss.light.max : 16;
   var fanMaxSpeed        = this.myBigAss.fan.max ? this.myBigAss.fan.max : 7;
@@ -327,9 +322,9 @@ function BigAssFanAccessory(log, config, existingAccessory) {
 
   this.occupancyService = existingOccupancyService || new Service.OccupancySensor(this.homekitOccupancyName);
   
-    setCharacteristicOnService(this.occupancyService, Characteristic.OccupancyDetected,
+  setCharacteristicOnService(this.occupancyService, Characteristic.OccupancyDetected,
                               "sensor", "isOccupied",
-                              occupancyGetWrapper, passThroughWrapper)
+                              occupancyGetWrapper, null)
     
   if (existingAccessory && !existingOccupancyService){
     existingAccessory.addService(this.occupancyService);
