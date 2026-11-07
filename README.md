@@ -60,6 +60,7 @@ You must also set the fan_name to the name returned here.
 | fan_on             |   Optional   | What "On" means - default 3/7            |
 | homekit_fan_name   |   Optional   | Name to call the Fan in Homekit          |
 | homekit_light_name |   Optional   | Name to call the Light in Homekit        |
+| homekit_whoosh_name |  Optional   | Name to call the Whoosh Mode switch in Homekit |
 
 
 Future features
