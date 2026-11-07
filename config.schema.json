@@ -1,0 +1,41 @@
+{
+  "pluginAlias": "BigAssFans",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "Finds every Big Ass Fan (Haiku / SenseME firmware) on your local network and adds it to HomeKit with its fan, light, occupancy sensor and Whoosh switch.",
+  "footerDisplay": "Homebridge must be on the same network as the fans and able to send UDP broadcasts (in Docker, use host networking).",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "Big Ass Fan",
+        "required": true
+      },
+      "fan_count": {
+        "title": "Number of fans",
+        "description": "How many fans to look for. The plugin keeps scanning until it has found this many.",
+        "type": "integer",
+        "default": 1,
+        "minimum": 1
+      },
+      "fan_on": {
+        "title": "Fan speed when turned on",
+        "description": "Speed (out of 7) to use when HomeKit turns the fan on.",
+        "type": "integer",
+        "placeholder": 3,
+        "minimum": 1,
+        "maximum": 7
+      },
+      "light_on": {
+        "title": "Light brightness when turned on",
+        "description": "Brightness (out of 16) to use when HomeKit turns the light on.",
+        "type": "integer",
+        "placeholder": 16,
+        "minimum": 1,
+        "maximum": 16
+      }
+    }
+  }
+}

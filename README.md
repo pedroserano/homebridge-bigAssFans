@@ -17,6 +17,8 @@ An example config.json is as follows:
     ]
 ```
 
+If you install through the Homebridge UI, this platform entry is added for you and you can set the fan count in the plugin's settings.
+
 This config will automatically scan and add *all* fans that are on your local wifi network. However you should also always add the expected number of fans with the optional config parameter `fan_count` (by default this assumes 1). Otherwise homebridge will not always discover all the fans.
 
 Install this package with
@@ -66,7 +68,7 @@ You must also set the fan_name to the name returned here.
 Future features
 ---------------
  - Getting motion sensors to work
- -- A note about sensors: The motion setting must be enabled for at least one service in the haiku app, either the fan or the light if it exists, and the occupancy sensor timeout must be set in order for this plugin's occupancy sensors to work. Even so, right now they will only update when you manually check them. This plugin lacks any way for the fan to notify it of changes.
+ -- A note about sensors: The motion setting must be enabled for at least one service in the haiku app, either the fan or the light if it exists, and the occupancy sensor timeout must be set in order for this plugin's occupancy sensors to work. The plugin polls the sensor every half second, so HomeKit sees changes without you opening the accessory.
  - Allowing all Legacy settings in the Platform mode
 
 Testing

@@ -32,7 +32,7 @@ function BigAssFansPlatform(log, config, api) {
   this.accessories = [];
   this.accessoriesHashed = {};
   this.numberOfFans = config ? (config.fan_count || 1) : 1;
-  this.fanMaster = new bigAssApi.FanMaster(this.numberOfFans); 
+  this.fanMaster = hardenFanMaster(new bigAssApi.FanMaster(this.numberOfFans), log);
   
   this.fanMaster.onFanFullyUpdated = function(myBigAss){
     platform.addAccessory(myBigAss);
@@ -127,7 +127,44 @@ BigAssFansPlatform.prototype.removeAccessory = function() {
 
 
 
+// BigAssFansAPI hands every reply from a fan it hasn't registered to its
+// "new fan" handler, which assumes five fields and throws on shorter status
+// replies. Those throws come from a UDP socket callback, so they would take
+// down Homebridge. Wrap the socket's message handlers so a bad packet is
+// skipped, and say once per name which fan is talking that we don't know.
+function hardenFanMaster(fanMaster, log) {
+  if (!fanMaster || !fanMaster.server || fanMaster._hardened) {
+    return fanMaster;
+  }
+  fanMaster._hardened = true;
+  var warned = {};
+  var server = fanMaster.server;
+  server.listeners("message").forEach(function(listener) {
+    server.removeListener("message", listener);
+    server.on("message", function(msg, rinfo) {
+      try {
+        listener.apply(this, arguments);
+      } catch (err) {
+        var fanName = ("" + msg).replace(/<|>|\(|\)/g, "").split(";")[0];
+        if (!warned[fanName]) {
+          warned[fanName] = true;
+          log("Ignoring replies from a fan named \"" + fanName + "\" at " +
+              (rinfo && rinfo.address) + " that isn't set up here (" + err.message + "). " +
+              "If this is your fan, raise fan_count (platform) or set fan_name to exactly that name (single-fan mode).");
+        }
+      }
+    });
+  });
+  return fanMaster;
+}
+
 function BigAssFanAccessory(log, config, existingAccessory) {
+  // Homebridge passes its API object as the third argument when it loads
+  // this as a standalone accessory; only a cached PlatformAccessory counts.
+  if (existingAccessory && typeof existingAccessory.getService !== "function") {
+    existingAccessory = undefined;
+  }
+
   this.log               = log;
   this.name              = config["name"];
   this.fanName           = config["fan_name"];        // TODO: Allow this to be null
@@ -164,6 +201,7 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   if (!this.fanMaster) {
     this.fanMaster = new bigAssApi.FanMaster(this.numberOfFans); 
   }
+  hardenFanMaster(this.fanMaster, this.log);
 
   // Put in exact information for the fan you're trying to reach
   this.myBigAss = new bigAssApi.BigAssFan(this.fanName, this.fanID, this.fanIPAddress, this.fanMaster);
