@@ -2,6 +2,7 @@ var bigAssApi = require("BigAssFansAPI");
 bigAssApi.logging = false;
 
 var Service, Characteristic;
+var PLUGIN_NAME = require("./package.json").name;
 
 module.exports = function(homebridge) {
   // Platform Accessory must be created from PlatformAccessory Constructor
@@ -10,8 +11,8 @@ module.exports = function(homebridge) {
   Characteristic = homebridge.hap.Characteristic;
   UUIDGen = homebridge.hap.uuid;
 
-  homebridge.registerPlatform("homebridge-bigAssFans", "BigAssFans", BigAssFansPlatform, true);
-  homebridge.registerAccessory("homebridge-bigAssFan", "BigAssFan", BigAssFanAccessory);
+  homebridge.registerPlatform(PLUGIN_NAME, "BigAssFans", BigAssFansPlatform, true);
+  homebridge.registerAccessory(PLUGIN_NAME, "BigAssFan", BigAssFanAccessory);
 }
 
   /********************************************
@@ -112,14 +113,14 @@ BigAssFansPlatform.prototype.addAccessory = function(theFan) {
   
   this.accessories.push(newAccessory);
   if (!platform.accessoriesHashed[uuid]) {
-    this.api.registerPlatformAccessories("homebridge-bigAssFans", "BigAssFans", [newAccessory]);
+    this.api.registerPlatformAccessories(PLUGIN_NAME, "BigAssFans", [newAccessory]);
   }
 }
 
 // Sample function to show how developer can remove accessory dynamically from outside event
 BigAssFansPlatform.prototype.removeAccessory = function() {
   this.log("Remove Accessory");
-  this.api.unregisterPlatformAccessories("homebridge-bigAssFans", "BigAssFans", this.accessories);
+  this.api.unregisterPlatformAccessories(PLUGIN_NAME, "BigAssFans", this.accessories);
 
   this.accessories = [];
 }
@@ -355,7 +356,7 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   }
 
   if (existingAccessory){
-    existingAccessory.updateReachability(true);
+    if (existingAccessory.updateReachability) existingAccessory.updateReachability(true);
   }
 }
 
