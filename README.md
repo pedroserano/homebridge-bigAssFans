@@ -21,7 +21,7 @@ This config will automatically scan and add *all* fans that are on your local wi
 
 Install this package with
 ```
-npm install -g @pedroserano/homebridge-bigassfans
+npm install -g @pedroserano24/homebridge-bigassfans
 ```
 
 Important note

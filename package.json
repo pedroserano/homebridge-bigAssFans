@@ -1,11 +1,11 @@
 {
-  "name": "@pedroserano/homebridge-bigassfans",
+  "name": "@pedroserano24/homebridge-bigassfans",
   "version": "1.2.0",
   "description": "A Homebridge plugin for Big Ass Fans (fork of homebridge-bigAssFans with occupancy, polling and Whoosh mode)",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pedroserano/homebridge-bigAssFans.git"
+    "url": "git+https://github.com/pedroserano/homebridge-bigAssFans.git"
   },
   "keywords": [
     "homebridge-plugin"
