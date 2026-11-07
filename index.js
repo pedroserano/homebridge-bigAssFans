@@ -271,6 +271,27 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   var lightMaxBrightness = this.myBigAss.light.max ? this.myBigAss.light.max : 16;
   var fanMaxSpeed        = this.myBigAss.fan.max ? this.myBigAss.fan.max : 7;
   
+  var existingFanService;
+  if (existingAccessory){
+    existingFanService = existingAccessory.getService(this.homekitFanName);
+  }
+  this.fanService = existingFanService || new Service.Fan(this.homekitFanName);
+  
+  setCharacteristicOnService(this.fanService, Characteristic.On,
+                             "fan", "speed",
+                             boolGetWrapper, fanSetWrapper)
+  
+  setCharacteristicOnService(this.fanService, Characteristic.RotationDirection,
+                             "fan", "isSpinningForwards",
+                             fanRotationGetWrapper, fanRotationSetWrapper)
+
+  setCharacteristicOnService(this.fanService, Characteristic.RotationSpeed,
+                             "fan", "speed",
+                             getScalingWrapper(fanMaxSpeed), setScalingWrapper(fanMaxSpeed))
+  if (existingAccessory && !existingFanService){
+    existingAccessory.addService(this.fanService);
+  }
+
   if (this.lightExists) {
     this.log("Found a light for: " + this.homekitLightName);
 
@@ -300,27 +321,6 @@ function BigAssFanAccessory(log, config, existingAccessory) {
    * Existing accessory updates
    ********************************************/
    
-  var existingFanService;
-  if (existingAccessory){
-    existingFanService = existingAccessory.getService(this.homekitFanName);
-  }
-  this.fanService = existingFanService || new Service.Fan(this.homekitFanName);
-  
-  setCharacteristicOnService(this.fanService, Characteristic.On,
-                             "fan", "speed",
-                             boolGetWrapper, fanSetWrapper)
-  
-  setCharacteristicOnService(this.fanService, Characteristic.RotationDirection,
-                             "fan", "isSpinningForwards",
-                             fanRotationGetWrapper, fanRotationSetWrapper)
-
-  setCharacteristicOnService(this.fanService, Characteristic.RotationSpeed,
-                             "fan", "speed",
-                             getScalingWrapper(fanMaxSpeed), setScalingWrapper(fanMaxSpeed))
-  if (existingAccessory && !existingFanService){
-    existingAccessory.addService(this.fanService);
-  }
-
   var existingOccupancyService;
   if (existingAccessory){
     existingOccupancyService = existingAccessory.getService(this.homekitOccupancyName);
@@ -351,7 +351,7 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   }
 
   this.getServices = function() {
-    return [this.lightService, this.fanService, this.occupancyService, this.whooshService];
+    return [this.fanService, this.lightService, this.occupancyService, this.whooshService];
   }
 
   if (existingAccessory){
