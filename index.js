@@ -32,7 +32,7 @@ function BigAssFansPlatform(log, config, api) {
   this.accessories = [];
   this.accessoriesHashed = {};
   this.numberOfFans = config ? (config.fan_count || 1) : 1;
-  this.fanMaster = hardenFanMaster(new bigAssApi.FanMaster(this.numberOfFans), log);
+  this.fanMaster = getFanMaster(this.numberOfFans, log);
   
   this.fanMaster.onFanFullyUpdated = function(myBigAss){
     platform.addAccessory(myBigAss);
@@ -158,6 +158,27 @@ function hardenFanMaster(fanMaster, log) {
   return fanMaster;
 }
 
+// One FanMaster per Homebridge process. Each FanMaster binds UDP port 31415,
+// so a second one (platform plus an accessory entry, or two accessory
+// entries) fails with EADDRINUSE and, unhandled, crashes Homebridge.
+var sharedFanMaster;
+function getFanMaster(numberOfFans, log) {
+  numberOfFans = numberOfFans || 1;
+  if (!sharedFanMaster) {
+    sharedFanMaster = hardenFanMaster(new bigAssApi.FanMaster(numberOfFans), log);
+    sharedFanMaster.server.on("error", function(err) {
+      log("Big Ass Fans: network error on UDP port " + sharedFanMaster.fanPort + ": " + err.message +
+          (err.code === "EADDRINUSE" ? ". Another program (or another copy of this plugin) is using that port." : ""));
+    });
+  } else if (numberOfFans > sharedFanMaster.numberOfExpectedFans) {
+    sharedFanMaster.numberOfExpectedFans = numberOfFans;
+    if (sharedFanMaster.connectionOpen) {
+      sharedFanMaster.rescanUntilAllFans();
+    }
+  }
+  return sharedFanMaster;
+}
+
 function BigAssFanAccessory(log, config, existingAccessory) {
   // Homebridge passes its API object as the third argument when it loads
   // this as a standalone accessory; only a cached PlatformAccessory counts.
@@ -198,10 +219,19 @@ function BigAssFanAccessory(log, config, existingAccessory) {
   setDefault("homekitWhooshName", this.name + " Whoosh Mode");
   // Don't scan for any fans since we know the exact address of the fan (faster!)
   // TODO: Make fan_id optional and do the scan for the user
-  if (!this.fanMaster) {
-    this.fanMaster = new bigAssApi.FanMaster(this.numberOfFans); 
+  if (!this.fanName) {
+    this.log("This \"BigAssFan\" accessory entry has no fan_name, so it can't reach a fan and is being skipped. " +
+             "Remove it from the \"accessories\" section of config.json; the BigAssFans platform finds your fans on its own.");
+    var informationService = new Service.AccessoryInformation();
+    this.getServices = function() {
+      return [informationService];
+    };
+    return;
   }
-  hardenFanMaster(this.fanMaster, this.log);
+
+  if (!this.fanMaster) {
+    this.fanMaster = getFanMaster(1, this.log);
+  }
 
   // Put in exact information for the fan you're trying to reach
   this.myBigAss = new bigAssApi.BigAssFan(this.fanName, this.fanID, this.fanIPAddress, this.fanMaster);
